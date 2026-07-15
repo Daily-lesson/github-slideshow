@@ -34,8 +34,16 @@ jobs:
           ruby-version: '3.3'
           bundler-cache: true # runs bundle install and caches gems
 
-      - name: Build site
-        run: bundle exec jekyll build
+      # Bundler 4's `bundle exec <gem-exe>` doesn't resolve gem executables
+      # here, so generate binstubs and invoke those instead.
+      - name: Generate binstubs
+        run: bundle binstubs jekyll html-proofer --force
 
+      - name: Build site
+        run: bundle exec bin/jekyll build
+
+      # node_modules holds the vendored reveal.js library (served at
+      # /node_modules/... in production); ignore its own test HTML so the
+      # proofer checks the actual site, not the library's fixtures.
       - name: Proof HTML (internal links only)
-        run: bundle exec htmlproofer ./_site --disable-external
+        run: bundle exec bin/htmlproofer ./_site --disable-external --ignore-files "/node_modules/"
