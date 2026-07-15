@@ -1,0 +1,41 @@
+name: Jekyll CI
+
+# This is a Jekyll site (github-pages gem), not a Node project. The right CI here
+# builds the site and proofs the generated HTML using the tooling already pinned
+# in the Gemfile / Gemfile.lock.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build & proof site
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      JEKYLL_ENV: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true # runs bundle install and caches gems
+
+      - name: Build site
+        run: bundle exec jekyll build
+
+      - name: Proof HTML (internal links only)
+        run: bundle exec htmlproofer ./_site --disable-external
